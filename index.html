@@ -3561,7 +3561,7 @@
         } 
     };
 
-    window.submitCheckout = async () => {
+     window.submitCheckout = async () => {
         const btn = document.getElementById('btnSubmitCheckout');
         if (!btn) return;
 
@@ -3613,11 +3613,15 @@
                 affiliateRef: localStorage.getItem('affiliateRef') || null
             });
 
-            // 2. TAMPILAN INSTRUKSI PEMBAYARAN
+            // 2. TAMPILAN INSTRUKSI PEMBAYARAN (DENGAN DATA DINAMIS QRIS & REDIRECT)
             const successView = document.getElementById('view-checkout');
+            const sysConfig = window.appState.systemSettings || {};
+            const qrisUrl = sysConfig.QRIS_IMAGE_URL || '';
+            const afterBtnText = sysConfig.AFTER_CHECKOUT_BTN_TEXT || 'Login Sekarang';
+            const afterBtnUrl = sysConfig.AFTER_CHECKOUT_BTN_URL || '/';
             
             if (t <= 0) {
-                // Tampilan Gratis (Langsung Login)
+                // Tampilan Gratis
                 successView.innerHTML = `
                     <div class="max-w-md mx-auto py-20 px-6 text-center animate-in fade-in duration-500">
                         <div class="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-emerald-500/20">
@@ -3625,10 +3629,10 @@
                         </div>
                         <h2 class="text-3xl font-black mb-4">Akses Aktif!</h2>
                         <p class="text-slate-500 mb-8">Produk gratis Anda sudah bisa diakses. Silakan login untuk memulai.</p>
-                        <button onclick="window.location.href='/'" class="w-full py-4 bg-brand text-white rounded-2xl font-black shadow-xl shadow-brand/30">Login Sekarang</button>
+                        <button onclick="window.location.href='${afterBtnUrl}'" class="w-full py-4 bg-brand text-white rounded-2xl font-black shadow-xl shadow-brand/30">${afterBtnText}</button>
                     </div>`;
             } else {
-                // TAMPILAN BERBAYAR (INSTRUKSI TRANSFER)
+                // TAMPILAN BERBAYAR
                 const banks = window.appState.settings.banks || [];
                 let bankListHtml = banks.map(b => `
                     <div class="bg-white/60 dark:bg-slate-900/60 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 mb-3 text-left">
@@ -3653,6 +3657,13 @@
                         <div class="glass p-6 rounded-[2.5rem] border border-white/50 dark:border-slate-800 shadow-2xl relative overflow-hidden text-left mb-8">
                             <div class="absolute -right-10 -top-10 w-32 h-32 bg-brand/10 rounded-full blur-3xl"></div>
                             <div class="relative z-10">
+                                ${qrisUrl ? `
+                                <div class="mb-6 p-4 bg-white rounded-2xl shadow-inner text-center">
+                                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Scan QRIS Untuk Bayar</p>
+                                    <img src="${qrisUrl}" class="w-full h-auto mx-auto max-w-[250px]" alt="QRIS">
+                                    <a href="${qrisUrl}" target="_blank" class="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-[10px] font-bold transition-all border border-slate-200 no-underline"><i class="ph ph-download-simple"></i> Simpan QRIS</a>
+                                </div>` : ''}
+
                                 <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center mb-1">Total Transfer</p>
                                 <div class="text-3xl font-black text-brand text-center mb-1 flex items-center justify-center gap-2">
                                     <span>${window.formatRp(t)}</span>
@@ -3663,19 +3674,17 @@
                                 <p class="text-center text-[10px] font-bold text-amber-600 uppercase mb-6">*Termasuk Kode Unik: ${unique}</p>
 
                                 <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center mb-3">Rekening Pembayaran:</p>
-                                ${bankListHtml || '<p class="text-center text-xs text-slate-400 italic">Data bank belum diatur di admin.</p>'}
+                                ${bankListHtml || '<p class="text-center text-xs text-slate-400 italic">Data bank belum diatur.</p>'}
                                 
                                 <div class="mt-6 p-4 bg-brand/5 dark:bg-brand/10 rounded-2xl border border-brand/10 text-center">
                                     <p class="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed">
-                                        <strong>PENTING:</strong> Transfer <strong>SAMA PERSIS</strong> sampai digit terakhir (<strong>${String(t).slice(-3)}</strong>) untuk verifikasi otomatis.
+                                        <strong>PENTING:</strong> Transfer <strong>SAMA PERSIS</strong> sampai digit terakhir untuk verifikasi otomatis.
                                     </p>
                                 </div>
                             </div>
                         </div>
 
-                        <button onclick="window.location.href='/'" class="w-full py-4 bg-brand text-white rounded-2xl font-black shadow-xl shadow-brand/30 transition-all mb-4">
-                            Ke Dashboard
-                        </button>
+                        <button onclick="window.location.href='${afterBtnUrl}'" class="w-full py-4 bg-brand text-white rounded-2xl font-black shadow-xl shadow-brand/30 mb-4">${afterBtnText}</button>
                         <p class="text-xs text-slate-400 italic font-medium text-center">Instruksi ini juga sudah kami kirim ke WhatsApp Anda.</p>
                     </div>`;
             }
