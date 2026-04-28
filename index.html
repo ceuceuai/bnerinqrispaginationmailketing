@@ -3879,43 +3879,112 @@
     }
 };
     window.saveSystemSettings = async () => {
-    const btn = document.getElementById('btnSaveSys'); 
-    if (btn) {
-        btn.disabled = true;
-        btn.innerHTML = '<i class="ph ph-circle-notch animate-spin"></i> Saving...';
-    }
+        const btn = document.getElementById('btnSaveSys'); 
+        if (btn) { btn.disabled = true; btn.innerHTML = '<i class="ph ph-circle-notch animate-spin"></i> Saving...'; }
 
-    const payload = {
-        KODE_UNIK_MODE: document.getElementById('sysUniqueMode').value,
-        KODE_UNIK_MAX: document.getElementById('sysUniqueMax').value,
-        AFFILIATE_LOCK: document.getElementById('sysAffLock').value,
-        AFFILIATE_COOKIE_DURATION: document.getElementById('sysCookieDays').value
+        const provider = document.getElementById('sysEmailProvider')?.value || 'NONE';
+        const payload = {
+            KODE_UNIK_MODE: document.getElementById('sysUniqueMode')?.value,
+            KODE_UNIK_MAX: document.getElementById('sysUniqueMax')?.value,
+            AFFILIATE_LOCK: document.getElementById('sysAffLock')?.value,
+            AFFILIATE_COOKIE_DURATION: document.getElementById('sysCookieDays')?.value,
+            emailProvider: provider,
+            MAILKETING_STATUS: provider === 'MAILKETING' ? 'ON' : 'OFF',
+            JOWMAIL_STATUS: provider === 'JOWMAIL' ? 'ON' : 'OFF',
+            KIRIMEMAIL_STATUS: provider === 'KIRIMEMAIL' ? 'ON' : 'OFF',
+            SMTP_STATUS: provider === 'SMTP' ? 'ON' : 'OFF',
+            MAILKETING_TOKEN: document.getElementById('MAILKETING_TOKEN')?.value || '',
+            MAILKETING_FROM_EMAIL: document.getElementById('MAILKETING_FROM_EMAIL')?.value || '',
+            MAILKETING_FROM_NAME: document.getElementById('MAILKETING_FROM_NAME')?.value || '',
+            JOWMAIL_TOKEN: document.getElementById('JOWMAIL_TOKEN')?.value || '',
+            JOWMAIL_LIST_ID: document.getElementById('JOWMAIL_LIST_ID')?.value || '',
+            KIRIMEMAIL_AUTH_ID: document.getElementById('KIRIMEMAIL_AUTH_ID')?.value || '',
+            KIRIMEMAIL_AUTH_TOKEN: document.getElementById('KIRIMEMAIL_AUTH_TOKEN')?.value || '',
+            KIRIMEMAIL_LIST_ID: document.getElementById('KIRIMEMAIL_LIST_ID')?.value || '',
+            KIRIMEMAIL_SENDER: document.getElementById('KIRIMEMAIL_SENDER')?.value || '',
+            SMTP_HOST: document.getElementById('SMTP_HOST')?.value || '',
+            SMTP_PORT: document.getElementById('SMTP_PORT')?.value || '',
+            SMTP_USER: document.getElementById('SMTP_USER')?.value || '',
+            SMTP_PASS: document.getElementById('SMTP_PASS')?.value || '',
+            QRIS_IMAGE_URL: document.getElementById('sysQrisUrl')?.value || '',
+            AFTER_CHECKOUT_BTN_TEXT: document.getElementById('sysAfterBtnText')?.value || '',
+            AFTER_CHECKOUT_BTN_URL: document.getElementById('sysAfterBtnUrl')?.value || ''
+        };
+
+        try {
+            const res = await apiCall('saveSystemSettings', payload);
+            if (res.success) {
+                window.showToast("Berhasil disimpan!", "success");
+                window.appState.systemSettings = payload; 
+            }
+        } catch (e) {
+            window.showToast("Gagal simpan", "error");
+        } finally {
+            if (btn) { btn.disabled = false; btn.innerHTML = 'SIMPAN KONFIGURASI SISTEM'; }
+        }
     };
-
-    try {
-        const res = await apiCall('saveSystemSettings', payload);
-        if (res.success) {
-            window.showToast("Konfigurasi sistem berhasil disimpan!", "success");
-            window.appState.systemSettings = payload; 
-        } else {
-            window.showToast(res.error || "Gagal menyimpan", "error");
-        }
-    } catch (e) {
-        window.showToast("Terjadi kesalahan koneksi", "error");
-        console.error(e);
-    } finally {
-        if (btn) {
-            btn.disabled = false;
-            btn.innerHTML = 'SIMPAN KONFIGURASI SISTEM';
-        }
-    }
-};
     // -----------------------------------------------------
 
     window.applyLogo = (src) => { 
         const l=document.getElementById('appLogoSidebar'); 
         if(src){ if(l){l.src=src;l.classList.remove('hidden');} } else { if(l){l.src='';l.classList.add('hidden');} } 
     };
+
+    // --- FUNGSI TES EMAIL GLOBAL ---
+window.testEmailConfig = async () => {
+    const provider = document.getElementById('sysEmailProvider').value;
+    
+    if (provider === 'NONE') {
+        return window.showToast("Pilih provider dulu, Bos!", "error");
+    }
+
+    const targetEmail = prompt("Kirim email tes ke mana?");
+    if (!targetEmail) return;
+
+    window.showToast("Sedang mengetes " + provider + "...");
+
+    // PAYLOAD LENGKAP: Mailketing, Jowmail & Kirim.Email
+    const payload = {
+        action: 'testThirdParty',
+        provider: provider.toLowerCase(),
+        test_email: targetEmail,
+        
+        // Logika ambil Token & ID secara dinamis
+        token: (provider === 'KIRIMEMAIL') 
+            ? document.getElementById('KIRIMEMAIL_AUTH_TOKEN')?.value 
+            : document.getElementById(provider + '_TOKEN')?.value || "",
+               
+        auth_id: document.getElementById('KIRIMEMAIL_AUTH_ID')?.value || "",
+        
+        list_id: (provider === 'KIRIMEMAIL')
+            ? document.getElementById('KIRIMEMAIL_LIST_ID')?.value
+            : document.getElementById(provider + '_LIST_ID')?.value || "",
+        
+        // Data Khusus Mailketing
+        from_email: document.getElementById('MAILKETING_FROM_EMAIL')?.value || "",
+        from_name: document.getElementById('MAILKETING_FROM_NAME')?.value || "Admin",
+        
+        // Data Khusus Kirim.Email
+        sender_email: document.getElementById('KIRIMEMAIL_SENDER')?.value || "",
+        
+        // Data Khusus SMTP
+        host: document.getElementById('SMTP_HOST')?.value || "",
+        port: document.getElementById('SMTP_PORT')?.value || "",
+        user: document.getElementById('SMTP_USER')?.value || "",
+        pass: document.getElementById('SMTP_PASS')?.value || ""
+    };
+
+    try {
+        const res = await apiCall('testThirdParty', payload);
+        if (res.success) {
+            window.showToast(res.message, "success");
+        } else {
+            window.showToast(res.message, "error");
+        }
+    } catch (err) {
+        window.showToast("Koneksi gagal: " + err.message, "error");
+    }
+};
 
     window.initChart = () => {
         setTimeout(() => {
