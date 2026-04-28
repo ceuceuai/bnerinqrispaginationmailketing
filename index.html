@@ -3896,6 +3896,28 @@
         console.error("Gagal render System Settings:", error);
     }
 };
+    // --- FUNGSI UNTUK MUNCULIN FORM SESUAI PILIHAN ---
+window.toggleEmailForms = () => {
+    const providerSelect = document.getElementById('sysEmailProvider');
+    if (!providerSelect) return;
+
+    const val = providerSelect.value;
+    console.log("Switching provider to:", val); // Cek di console F12
+
+    // 1. Sembunyikan SEMUA form email dulu
+    document.querySelectorAll('.email-config-form').forEach(el => {
+        el.classList.add('hidden');
+    });
+
+    // 2. Munculkan form yang ID-nya pas (Contoh: form-KIRIMEMAIL)
+    const targetForm = document.getElementById('form-' + val);
+    if (targetForm) {
+        targetForm.classList.remove('hidden');
+        console.log("Form visible:", 'form-' + val);
+    } else {
+        console.warn("Form tidak ditemukan untuk ID:", 'form-' + val);
+    }
+};
     window.saveSystemSettings = async () => {
         const btn = document.getElementById('btnSaveSys'); 
         if (btn) { btn.disabled = true; btn.innerHTML = '<i class="ph ph-circle-notch animate-spin"></i> Saving...'; }
